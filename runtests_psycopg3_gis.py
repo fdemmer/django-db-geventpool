@@ -13,7 +13,7 @@ settings.configure(
     DEBUG=True,
     DATABASES={
         "default": {
-            "ENGINE": "django_db_geventpool.backends.postgresql_psycopg3",
+            "ENGINE": "django_db_geventpool.backends.postgis",
             "NAME": "test",
             "USER": "postgres",
             "PASSWORD": "postgres",
@@ -32,6 +32,6 @@ django.setup()
 
 test_runner = DiscoverRunner(verbosity=2)
 
-failures = test_runner.run_tests(["tests.tests"])
+failures = test_runner.run_tests(["tests.tests", "tests.tests_gis"])
 if failures:
     sys.exit(failures)
