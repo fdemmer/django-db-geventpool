@@ -6,6 +6,8 @@ try:
 except ImportError:
     from eventlet.semaphore import Semaphore
 
+from django.core.exceptions import ImproperlyConfigured
+
 from .creation import DatabaseCreation
 
 logger = logging.getLogger("django.geventpool")
@@ -17,29 +19,36 @@ class DatabaseWrapperMixin:
     pool_class = None
     creation_class = DatabaseCreation
     INTRANS = None
-    _connection_pools = {}
-
+    # Not named `_connection_pools`/`pool`: since Django 5.1 the PostgreSQL backend
+    # uses those for its own psycopg pool and skips setting up the connection (time
+    # zone, role) and health checks whenever `pool` is set.
+    _gevent_connection_pools = {}
 
     def __init__(self, *args, **kwargs):
-        self._pool = None
+        self._gevent_pool = None
         super().__init__(*args, **kwargs)
+        if self.settings_dict["OPTIONS"].get("pool"):
+            raise ImproperlyConfigured(
+                "django-db-geventpool can't be combined with Django's connection "
+                "pool, remove the 'pool' option."
+            )
         self.creation = self.creation_class(self)
 
     @property
-    def pool(self):
-        if self._pool is not None:
-            return self._pool
+    def gevent_pool(self):
+        if self._gevent_pool is not None:
+            return self._gevent_pool
         with connection_pools_lock:
-            if self.alias not in self._connection_pools:
-                self._pool = self.pool_class(**self.get_connection_params())
-                self._connection_pools[self.alias] = self._pool
+            if self.alias not in self._gevent_connection_pools:
+                self._gevent_pool = self.pool_class(**self.get_connection_params())
+                self._gevent_connection_pools[self.alias] = self._gevent_pool
             else:
-                self._pool = self._connection_pools[self.alias]
-        return self._pool
+                self._gevent_pool = self._gevent_connection_pools[self.alias]
+        return self._gevent_pool
 
     def get_new_connection(self, conn_params: dict):
         if self.connection is None:
-            self.connection = self.pool.get()
+            self.connection = self.gevent_pool.get()
             self.closed_in_transaction = False
         return self.connection
 
@@ -75,17 +84,17 @@ class DatabaseWrapperMixin:
 
     def _close(self):
         if self.connection.closed:
-            self.pool.close()
+            self.gevent_pool.close()
         else:
             if self.connection.info.transaction_status == self.INTRANS:
                 self.connection.rollback()
                 self.connection.autocommit = True
             with self.wrap_database_errors:
-                self.pool.put(self.connection)
+                self.gevent_pool.put(self.connection)
         self.connection = None
 
     def closeall(self):
-        for pool in self._connection_pools.values():
+        for pool in self._gevent_connection_pools.values():
             pool.close()
 
     def set_clean(self):

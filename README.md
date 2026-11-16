@@ -25,19 +25,16 @@ psycopg2
 
 If **gevent** is not installed, the pool will use **eventlet** as fallback.
 
--   `psycopg2>=2.5.1` for CPython 2 and 3 (or
-    [psycopg2-binary](https://pypi.org/project/psycopg2-binary/)---see
-    [notes in the psycopg2 2.7.4
-    release](http://initd.org/psycopg/articles/2018/02/08/psycopg-274-released/))
--   `psycopg2cffi>=2.7` for PyPy
+-   `psycopg2>=2.8.4` (the minimum supported by Django 4.2) or
+    [psycopg2-binary](https://pypi.org/project/psycopg2-binary/)
 
     Patch psycopg2
     --------------
 
     Before using the pool, psycopg2 must be patched with psycogreen, if you
-    are using [gunicorn webserver](http://www.gunicorn.org/), a good place
+    are using [gunicorn webserver](https://gunicorn.org/), a good place
     is the
-    [post\_fork()](http://docs.gunicorn.org/en/latest/settings.html#post-fork)
+    [post\_fork()](https://docs.gunicorn.org/en/latest/settings.html#post-fork)
     function at the config file:
 
     ``` {.python}
@@ -56,9 +53,10 @@ Settings
 >
 >         - For psycopg3: 'django_db_geventpool.backends.postgresql_psycopg3'
 >         - For psycopg2: 'django_db_geventpool.backends.postgresql_psycopg2'
->         - For postgis: 'django_db_geventpool.backends.postgis'
+>         - For postgis: 'django_db_geventpool.backends.postgis' (uses psycopg3 if
+>           installed, psycopg2 otherwise)
 >
-> -   Add *MAX\_CONNS* to *OPTIONS* to set the maximun number of
+> -   Add *MAX\_CONNS* to *OPTIONS* to set the maximum number of
 >     connections allowed to database (default=4)
 >
 > -   Add *REUSE\_CONNS* to *OPTIONS* to indicate how many of the
@@ -68,13 +66,14 @@ Settings
 > -   Add *\'CONN\_MAX\_AGE\': 0* to settings to disable default django
 >     persistent connection feature. And read below note if you are
 >     manually spawning greenlets
-
-For Django < 5.1:
+>
+> -   Don't set Django's *pool* option (Django >= 5.1), the native pool
+>     can't be combined with this one
 
 ``` {.python}
 DATABASES = {
     'default': {
-        'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg',
+        'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg3',
         'NAME': 'db',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
@@ -85,28 +84,6 @@ DATABASES = {
         'OPTIONS': {
             'MAX_CONNS': 20,
             'REUSE_CONNS': 10
-        }
-    }
-}
-```
-
-For Django >= 5.1, native pool support should be disabled:
-
-``` {.python}
-DATABASES = {
-    'default': {
-        'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg',
-        'NAME': 'db',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': '',
-        'PORT': '',
-        'ATOMIC_REQUESTS': False,
-        'CONN_MAX_AGE': 0,
-        'OPTIONS': {
-            'MAX_CONNS': 20,
-            'REUSE_CONNS': 10,
-            'pool': False
         }
     }
 }
