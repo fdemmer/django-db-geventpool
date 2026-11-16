@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-db-geventpool"
@@ -19,7 +19,6 @@ classifiers = [
     "Framework :: Django :: 6.0",
     "Framework :: Django :: 6.1",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -40,10 +39,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/jneight/django-db-geventpool"
 
-[tool.hatch.version]
-path = "django_db_geventpool/__init__.py"
+[tool.setuptools.dynamic]
+version = {attr = "django_db_geventpool.__version__"}
 
-[tool.hatch.build.targets.sdist]
-include = [
-    "/django_db_geventpool",
-]
+[tool.setuptools.packages.find]
+include = ["django_db_geventpool*"]
