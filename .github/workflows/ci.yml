@@ -9,6 +9,9 @@ name: CI
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  # use uv's interpreters, not the runner's (consistent, cached by setup-uv)
+  UV_PYTHON_PREFERENCE: only-managed
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
