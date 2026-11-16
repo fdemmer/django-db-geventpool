@@ -4,6 +4,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db import connections, transaction
 from django.db.backends.postgresql.psycopg_any import IsolationLevel
 from django.test import SimpleTestCase, TestCase
+from django_db_geventpool.backends.pool import DatabaseConnectionPool
 from django_db_geventpool.utils import close_connection
 
 from .models import TestModel
@@ -209,3 +210,29 @@ class ConnectTwiceTest(PoolTestCase):
         self.assertIs(self.db.connection, connection)
         self.assertEqual(self.db.gevent_pool.size, 1)
 
+
+class FakeConnection:
+    def __init__(self, fail_close=False):
+        self.fail_close = fail_close
+        self.closed = False
+
+    def close(self):
+        if self.fail_close:
+            raise RuntimeError("close failed")
+        self.closed = True
+
+
+class PoolCloseTest(SimpleTestCase):
+    def test_close_continues_after_error(self):
+        pool = DatabaseConnectionPool(maxsize=2, reuse=2)
+        failing = pool.get(create=lambda: FakeConnection(fail_close=True))
+        working = pool.get(create=FakeConnection)
+        pool.put(failing)
+        pool.put(working)
+        self.assertEqual(pool.size, 2)
+
+        pool.close()
+
+        self.assertIs(working.closed, True)
+        self.assertEqual(pool.size, 0)
+        self.assertTrue(pool.pool.empty())
