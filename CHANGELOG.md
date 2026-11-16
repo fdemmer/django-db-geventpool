@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fixed more than `MAX_CONNS` connections being opened when many requests arrive at once, e.g. on startup: every greenlet that asked for a connection while the first ones were still connecting created its own; now they wait for a free one, [#96](https://github.com/jneight/django-db-geventpool/issues/96)
 - Fixed the eventlet fallback, which failed to import (`attempted relative import beyond top-level package`) whenever gevent was not installed, broken since 4.0.2
 - Fixed dead connections still counting towards `MAX_CONNS`: a connection that failed the usability check, was already closed or failed to close stayed in the pool's count until it was garbage collected, and once the limit was reached getting a connection blocked forever
 - Removed the unused `PostgresConnectionPool.create_connection()` and the connection parameters passed to the pool; `DatabaseConnectionPool.get()` now requires `create`

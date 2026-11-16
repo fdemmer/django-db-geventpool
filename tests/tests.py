@@ -267,3 +267,31 @@ class PoolMaxSizeTest(SimpleTestCase):
         run_concurrently(request, 10)
         self.assertEqual(len(created), 2)
         self.assertEqual(pool.size, 2)
+
+    def test_failed_create_frees_slot(self):
+        # a greenlet waiting for the only slot must get it when creating the
+        # connection in it fails, instead of waiting forever
+        pool = FakePool(maxsize=1, reuse=1)
+        pool.WAIT_TIMEOUT = 0.01
+        calls = []
+
+        def create():
+            calls.append(None)
+            sleep(0.01)
+            if len(calls) == 1:
+                raise RuntimeError("connection refused")
+            return FakeConnection()
+
+        results = []
+
+        def request(_):
+            try:
+                results.append(pool.get(create=create))
+            except RuntimeError as e:
+                results.append(e)
+
+        run_concurrently(request, 2)
+        self.assertEqual(len(calls), 2)
+        self.assertIsInstance(results[0], RuntimeError)
+        self.assertIsInstance(results[1], FakeConnection)
+        self.assertEqual(pool.size, 1)
