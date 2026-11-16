@@ -30,6 +30,7 @@ settings.configure(
         "django_db_geventpool",
     ),
     USE_TZ=True,
+    DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
 )
 
 django.setup()
