@@ -2,6 +2,7 @@ import datetime
 
 import gevent
 
+from django.core.exceptions import ImproperlyConfigured
 from django.db import connections
 from django.test import SimpleTestCase, TestCase
 from django_db_geventpool.utils import close_connection
@@ -63,3 +64,11 @@ class TimeZoneTest(SimpleTestCase):
             value = datetime.datetime(2026, 11, 15, 11, 38, 8, tzinfo=datetime.timezone.utc)
             cursor.execute("SELECT %s::timestamptz", [value])
             self.assertEqual(cursor.fetchone()[0], value)
+
+
+class DjangoPoolOptionTest(SimpleTestCase):
+    def test_pool_option_is_rejected(self):
+        settings_dict = {**connections["default"].settings_dict}
+        settings_dict["OPTIONS"] = {**settings_dict["OPTIONS"], "pool": True}
+        with self.assertRaises(ImproperlyConfigured):
+            connections["default"].__class__(settings_dict, alias="pool_option_test")

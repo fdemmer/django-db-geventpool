@@ -68,8 +68,9 @@ Settings
 > -   Add *\'CONN\_MAX\_AGE\': 0* to settings to disable default django
 >     persistent connection feature. And read below note if you are
 >     manually spawning greenlets
-
-For Django < 5.1:
+>
+> -   Don't set Django's *pool* option (Django >= 5.1), the native pool
+>     can't be combined with this one
 
 ``` {.python}
 DATABASES = {
@@ -85,28 +86,6 @@ DATABASES = {
         'OPTIONS': {
             'MAX_CONNS': 20,
             'REUSE_CONNS': 10
-        }
-    }
-}
-```
-
-For Django >= 5.1, native pool support should be disabled:
-
-``` {.python}
-DATABASES = {
-    'default': {
-        'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg',
-        'NAME': 'db',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': '',
-        'PORT': '',
-        'ATOMIC_REQUESTS': False,
-        'CONN_MAX_AGE': 0,
-        'OPTIONS': {
-            'MAX_CONNS': 20,
-            'REUSE_CONNS': 10,
-            'pool': False
         }
     }
 }
