@@ -1,7 +1,7 @@
 #!/usr/bin/env python
+import os
 import sys
 import gevent.monkey
-from distutils.version import StrictVersion
 
 gevent.monkey.patch_all()
 
@@ -21,6 +21,8 @@ settings.configure(
             "ATOMIC_REQUESTS": False,
             "CONN_MAX_AGE": 0,
             "HOST": "localhost",
+            # tox sets a name per env, so envs can run in parallel (tox -p)
+            "TEST": {"NAME": os.environ.get("TEST_DB_NAME")},
         }
     },
     INSTALLED_APPS=(
@@ -28,10 +30,8 @@ settings.configure(
         "django_db_geventpool",
     ),
     USE_TZ=True,
+    DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
 )
-
-if StrictVersion(django.get_version()) >= StrictVersion('5.1.0'):
-    settings.DATABASES['default']["OPTIONS"] = {"pool": False}
 
 django.setup()
 

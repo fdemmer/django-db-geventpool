@@ -1,0 +1,69 @@
+name: CI
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  # use uv's interpreters, not the runner's (consistent, cached by setup-uv)
+  UV_PYTHON_PREFERENCE: only-managed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  envs:
+    name: List tox envs
+    runs-on: ubuntu-latest
+    outputs:
+      envs: ${{ steps.envs.outputs.envs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - id: envs
+        run: echo "envs=$(uvx --with tox-uv tox -l | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+  test:
+    name: ${{ matrix.env }}
+    needs: envs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: ${{ fromJSON(needs.envs.outputs.envs) }}
+    services:
+      postgres:
+        image: postgis/postgis:18-3.7@sha256:e55337da273845fb2ad38f6151953f70fd93ac8ac2a3d2edbc4056c858783a5f
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: true
+          cache-python: true
+          cache-dependency-glob: |
+            tox.ini
+            pyproject.toml
+          cache-suffix: ${{ matrix.env }}
+      - name: Install GDAL and GEOS
+        if: contains(matrix.env, 'gis')
+        run: sudo apt-get update && sudo apt-get install -y gdal-bin
+      - run: uvx --with tox-uv tox run -e "$TOX_ENV"
+        env:
+          TOX_ENV: ${{ matrix.env }}
