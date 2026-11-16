@@ -32,7 +32,7 @@ class DatabaseConnectionPool:
         with self.lock:
             return len(self._conns)
 
-    def get(self):
+    def get(self, create=None):
         try:
             if self.size >= self.maxsize or self.pool.qsize():
                 conn = self.pool.get()
@@ -52,7 +52,7 @@ class DatabaseConnectionPool:
 
         if conn is None:
             try:
-                conn = self.create_connection()
+                conn = (create or self.create_connection)()
             except Exception:
                 raise
             else:

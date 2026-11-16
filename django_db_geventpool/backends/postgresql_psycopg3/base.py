@@ -22,12 +22,10 @@ class PostgresConnectionPool(pool.DatabaseConnectionPool):
         reuse = kwargs.pop("REUSE_CONNS", maxsize)
         self.args = args
         self.kwargs = kwargs
-        self.kwargs["client_encoding"] = "UTF8"
         super().__init__(maxsize, reuse)
 
     def create_connection(self):
-        conn = self.connect(*self.args, **self.kwargs)
-        return conn
+        return self.connect(*self.args, **self.kwargs)
 
     def check_usable(self, connection):
         connection.cursor().execute("SELECT 1")

@@ -27,6 +27,7 @@ settings.configure(
     },
     INSTALLED_APPS=(
         "tests",
+        "tests_gis",
         "django_db_geventpool",
     ),
     USE_TZ=True,
@@ -37,6 +38,6 @@ django.setup()
 
 test_runner = DiscoverRunner(verbosity=2)
 
-failures = test_runner.run_tests(["tests.tests"])
+failures = test_runner.run_tests(["tests.tests", "tests_gis.tests"])
 if failures:
     sys.exit(failures)
