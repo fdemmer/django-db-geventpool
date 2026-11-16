@@ -199,3 +199,13 @@ class CloseErrorTest(PoolTestCase):
         self.assertIsNone(self.db.connection)
 
         self.assertNotEqual(self.backend_pid(), pid)
+
+
+class ConnectTwiceTest(PoolTestCase):
+    def test_connect_while_connected_keeps_connection(self):
+        self.db.ensure_connection()
+        connection = self.db.connection
+        self.db.connect()  # must not take a second connection from the pool
+        self.assertIs(self.db.connection, connection)
+        self.assertEqual(self.db.gevent_pool.size, 1)
+
