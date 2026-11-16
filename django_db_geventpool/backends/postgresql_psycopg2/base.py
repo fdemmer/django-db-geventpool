@@ -1,6 +1,5 @@
 try:
     import psycopg2
-    import psycopg2.extras
     import psycopg2.extensions
 except ImportError as e:
     from django.core.exceptions import ImproperlyConfigured
@@ -24,13 +23,10 @@ class PostgresConnectionPool(pool.DatabaseConnectionPool):
         reuse = kwargs.pop("REUSE_CONNS", maxsize)
         self.args = args
         self.kwargs = kwargs
-        self.kwargs["client_encoding"] = "UTF8"
         super().__init__(maxsize, reuse)
 
     def create_connection(self):
-        conn = self.connect(*self.args, **self.kwargs)
-        psycopg2.extras.register_default_jsonb(conn_or_curs=conn, loads=lambda x: x)
-        return conn
+        return self.connect(*self.args, **self.kwargs)
 
     def check_usable(self, connection):
         connection.cursor().execute("SELECT 1")

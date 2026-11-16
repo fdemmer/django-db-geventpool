@@ -1,3 +1,4 @@
+import functools
 import logging
 import sys
 
@@ -13,6 +14,8 @@ from .creation import DatabaseCreation
 logger = logging.getLogger("django.geventpool")
 
 connection_pools_lock = Semaphore(value=1)
+
+POOL_OPTIONS = ["MAX_CONNS", "REUSE_CONNS"]
 
 
 class DatabaseWrapperMixin:
@@ -40,7 +43,11 @@ class DatabaseWrapperMixin:
             return self._gevent_pool
         with connection_pools_lock:
             if self.alias not in self._gevent_connection_pools:
-                self._gevent_pool = self.pool_class(**self.get_connection_params())
+                options = self.settings_dict["OPTIONS"]
+                pool_options = {key: options[key] for key in POOL_OPTIONS if key in options}
+                self._gevent_pool = self.pool_class(
+                    **self.get_connection_params(), **pool_options
+                )
                 self._gevent_connection_pools[self.alias] = self._gevent_pool
             else:
                 self._gevent_pool = self._gevent_connection_pools[self.alias]
@@ -48,15 +55,17 @@ class DatabaseWrapperMixin:
 
     def get_new_connection(self, conn_params: dict):
         if self.connection is None:
-            self.connection = self.gevent_pool.get()
+            # New connections are created by the backend (e.g. to set the isolation
+            # level, register PostGIS adapters with psycopg3).
+            create = functools.partial(super().get_new_connection, conn_params)
+            self.connection = self.gevent_pool.get(create=create)
             self.closed_in_transaction = False
         return self.connection
 
     def get_connection_params(self) -> dict:
         conn_params = super().get_connection_params()
-        for attr in ["MAX_CONNS", "REUSE_CONNS"]:
-            if attr in self.settings_dict["OPTIONS"]:
-                conn_params[attr] = self.settings_dict["OPTIONS"][attr]
+        for key in POOL_OPTIONS:
+            conn_params.pop(key, None)
         return conn_params
 
     def close(self):
