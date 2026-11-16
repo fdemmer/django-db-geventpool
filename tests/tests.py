@@ -3,7 +3,8 @@ import datetime
 import gevent
 
 from django.core.exceptions import ImproperlyConfigured
-from django.db import connections
+from django.db import connections, transaction
+from django.db.backends.postgresql.psycopg_any import IsolationLevel
 from django.test import SimpleTestCase, TestCase
 from django_db_geventpool.utils import close_connection
 
@@ -72,3 +73,28 @@ class DjangoPoolOptionTest(SimpleTestCase):
         settings_dict["OPTIONS"] = {**settings_dict["OPTIONS"], "pool": True}
         with self.assertRaises(ImproperlyConfigured):
             connections["default"].__class__(settings_dict, alias="pool_option_test")
+
+
+class IsolationLevelTest(SimpleTestCase):
+    """Connections created by the pool must use the isolation level from OPTIONS."""
+
+    databases = {"default"}
+    alias = "isolation_level_test"
+
+    def setUp(self):
+        settings_dict = {**connections["default"].settings_dict}
+        settings_dict["OPTIONS"] = {
+            **settings_dict["OPTIONS"],
+            "isolation_level": IsolationLevel.SERIALIZABLE,
+        }
+        db = connections["default"].__class__(settings_dict, alias=self.alias)
+        connections[self.alias] = db
+        self.addCleanup(connections.__delitem__, self.alias)
+        self.addCleanup(db.closeall)
+        self.addCleanup(db.close)
+
+    def test_isolation_level(self):
+        with transaction.atomic(using=self.alias):
+            with connections[self.alias].cursor() as cursor:
+                cursor.execute("SHOW transaction_isolation")
+                self.assertEqual(cursor.fetchone()[0], "serializable")
