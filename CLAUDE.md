@@ -12,7 +12,7 @@ The tests need a running PostgreSQL with PostGIS on localhost:5432 (user and pas
 
     docker compose up -d                          # or: just db
 
-Run them through tox with tox-uv, the same way CI does (`just test` / `just test <env>` wraps this):
+Run them through tox with tox-uv, the same way CI does (`just test` / `just test <env>` wraps this, `just test_coverage` adds a combined coverage report):
 
     uvx --with tox-uv tox -l                      # list envs
     uvx --with tox-uv tox run -e py312-dj52-pg3   # one env
@@ -23,7 +23,8 @@ Run them through tox with tox-uv, the same way CI does (`just test` / `just test
 - The `eventlet` factor installs eventlet instead of gevent, monkey-patches with eventlet and `psycogreen.eventlet`, and runs `EventletFallbackTest` (skipped in other envs), which fails if gevent can be imported. It tests the eventlet fallback (`base.py`, `pool.py` and `utils.NullContextRLock`). Only psycopg2 is tested, and only on Pythons that eventlet supports. `tests/tests.py` must not import gevent directly: use `run_concurrently` and `sleep`, which come from gevent or eventlet, whichever is installed.
 - In `tests/tests.py`, `PoolTestCase` gives each test a private wrapper with `MAX_CONNS: 1` and `terminate()` to kill a backend from the server side. `FakePool`/`FakeConnection` test `DatabaseConnectionPool` without a database.
 - There are no runner scripts. tox runs Django's test runner with `DJANGO_SETTINGS_MODULE=tests.settings`. `tests/settings.py` picks the backend from `DB_ENGINE` (set per factor; `postgis` also adds `tests_gis`), and applies psycogreen when psycopg2 is installed, for the library named in `GREEN` (`gevent` by default, `eventlet` in the `eventlet` envs).
-- Monkey-patching has to happen before Django is imported, so it's done in the tox command: `python -m gevent.monkey --module django test ...`, or an inline `python -c "import eventlet; eventlet.monkey_patch(); ..."` for eventlet, which has no such launcher.
+- Monkey-patching has to happen before Django is imported, so it's done in the tox command: `python -m gevent.monkey --module django test ...`, or `python -m tests.eventlet_main test ...` for eventlet, which has no such launcher.
+- Coverage is opt-in: when `RUN_COVERAGE` is set, tox inserts it before `-m gevent.monkey`/`-m tests.eventlet_main`. `just test_coverage` sets it to `-m coverage run --concurrency={env:GREEN} --context={env_name}`, so each env writes a parallel data file to the repo root with the env name as static context. The recipe runs all envs, combines the data and writes `htmlcov/`, whose per-line context markers show which envs ran a line. Config is in `[tool.coverage.*]` in `pyproject.toml`; tox installs `coverage[toml]` because Python < 3.11 has no `tomllib`.
 - Test labels default to `tests.tests` (plus `tests_gis.tests` with `gis`); pass others after `--`, e.g. `tox run -e py312-dj52-pg3 -- tests.tests.ModelTest` or `just test py312-dj52-pg3 tests.tests.ModelTest`.
 - `TEST_DB_NAME` (set by tox per env) gives each env its own test database so that `tox -p` works. `PG*` env vars are passed through.
 - CI (`.github/workflows/main.yml`) runs one job per tox env against the `postgis/postgis` service.

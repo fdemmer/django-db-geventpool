@@ -17,6 +17,16 @@ db:
 test env="" *labels:
     uvx --with tox-uv tox {{ if env == "" { "--parallel auto" } else { "-e " + env + " -- " + labels } }}
 
+# run all envs, combine their coverage; the HTML report shows which envs ran each line
+test_coverage:
+    uvx coverage erase
+    RUN_COVERAGE='-m coverage run --concurrency={env:GREEN} --context={env_name}' \
+        uvx --with tox-uv tox --parallel auto
+    uvx coverage combine
+    uvx coverage report
+    uvx coverage html
+    @echo "open htmlcov/index.html, click a line's context marker to see the envs"
+
 build: clean
     uv build
     uvx twine check --strict dist/*
