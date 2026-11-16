@@ -8,6 +8,7 @@
 - Removed the unused `PostgresConnectionPool.create_connection()` and the connection parameters passed to the pool; `DatabaseConnectionPool.get()` now requires `create`
 - Test the eventlet fallback with psycopg2 in separate tox envs (`pg2-eventlet`) without gevent installed
 - Tests for replacing dead connections, rolling back open transactions when a connection is returned to the pool and errors while closing
+- Rewrote the README: fixed broken formatting, added requirements, installation per driver and a section on how the pool works
 
 ## 5.0
 
