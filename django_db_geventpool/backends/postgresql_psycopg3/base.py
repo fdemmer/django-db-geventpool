@@ -16,16 +16,9 @@ class PostgresConnectionPool(pool.DatabaseConnectionPool):
     DBERROR = psycopg.DatabaseError
 
     def __init__(self, *args, **kwargs):
-        self.connect = kwargs.pop("connect", psycopg.connect)
-        self.connection = None
         maxsize = kwargs.pop("MAX_CONNS", 4)
         reuse = kwargs.pop("REUSE_CONNS", maxsize)
-        self.args = args
-        self.kwargs = kwargs
         super().__init__(maxsize, reuse)
-
-    def create_connection(self):
-        return self.connect(*self.args, **self.kwargs)
 
     def check_usable(self, connection):
         connection.cursor().execute("SELECT 1")

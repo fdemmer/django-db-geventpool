@@ -19,8 +19,9 @@ Run them through tox with tox-uv, the same way CI does (`just test` / `just test
     uvx --with tox-uv tox run -e py312-dj52-pg3-gis
     uvx --with tox-uv tox -p                      # all envs in parallel
 
-- Env names follow `py3X-djNN-pg{2,3}[-gis]`. The `pg2`/`pg3` factor picks psycopg2-binary or psycopg3. The `gis` factor uses the `postgis` engine, runs both `tests` and `tests_gis`, and needs GDAL/GEOS installed locally.
-- Each env runs one of the `runtests_psycopg{2,3}[_gis].py` scripts. Each script monkey-patches with gevent (the psycopg2 scripts also apply psycogreen), configures settings inline and runs `DiscoverRunner` on hardcoded labels. tox passes no positional args, so to run a single test, change the label list in the script for that run or run the script directly in an env's virtualenv (e.g. `.tox/py312-dj52-pg3/bin/python runtests_psycopg3.py`).
+- Env names follow `py3X-djNN-pg{2,3}[-gis]` and `py3X-djNN-pg2-eventlet`. The `pg2`/`pg3` factor picks psycopg2-binary or psycopg3. The `gis` factor uses the `postgis` engine, runs both `tests` and `tests_gis`, and needs GDAL/GEOS installed locally.
+- The `eventlet` factor installs eventlet instead of gevent and runs `runtests_psycopg2_eventlet.py`, which monkey-patches with eventlet and `psycogreen.eventlet` and exits if gevent can be imported. It tests the eventlet fallback (`base.py`, `pool.py` and `utils.NullContextRLock`). Only psycopg2 is tested, and only on Pythons that eventlet supports. `tests/tests.py` must not import gevent directly: use `run_concurrently`, which picks gevent or eventlet.
+- Each env runs one of the `runtests_psycopg{2,3}[_gis].py` scripts. Each script monkey-patches with gevent (eventlet for the `eventlet` script; the psycopg2 scripts also apply psycogreen), configures settings inline and runs `DiscoverRunner` on hardcoded labels. tox passes no positional args, so to run a single test, change the label list in the script for that run or run the script directly in an env's virtualenv (e.g. `.tox/py312-dj52-pg3/bin/python runtests_psycopg3.py`).
 - `TEST_DB_NAME` (set by tox per env) gives each env its own test database so that `tox -p` works. `PG*` env vars are passed through.
 - CI (`.github/workflows/main.yml`) runs one job per tox env against the `postgis/postgis` service.
 

@@ -45,9 +45,7 @@ class DatabaseWrapperMixin:
             if self.alias not in self._gevent_connection_pools:
                 options = self.settings_dict["OPTIONS"]
                 pool_options = {key: options[key] for key in POOL_OPTIONS if key in options}
-                self._gevent_pool = self.pool_class(
-                    **self.get_connection_params(), **pool_options
-                )
+                self._gevent_pool = self.pool_class(**pool_options)
                 self._gevent_connection_pools[self.alias] = self._gevent_pool
             else:
                 self._gevent_pool = self._gevent_connection_pools[self.alias]
@@ -75,6 +73,7 @@ class DatabaseWrapperMixin:
         try:
             self._close()
         except:
+            self.gevent_pool.discard(self.connection)
             # In some cases (database restart, network connection lost etc...)
             # the connection to the database is lost without giving Django a
             # notification. If we don't set self.connection to None, the error
@@ -93,6 +92,7 @@ class DatabaseWrapperMixin:
 
     def _close(self):
         if self.connection.closed:
+            self.gevent_pool.discard(self.connection)
             self.gevent_pool.close()
         else:
             if self.connection.info.transaction_status == self.INTRANS:
