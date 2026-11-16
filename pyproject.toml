@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "fdemmer-django-db-geventpool"
 dynamic = ["version"]
 description = "Fork of django-db-geventpool, a DB connection pool using gevent for Django"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 readme = "README.md"
 license = "Apache-2.0"
 authors = [
@@ -25,7 +25,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",

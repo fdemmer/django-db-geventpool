@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A Django database backend for PostgreSQL/PostGIS that pools connections with gevent (eventlet as a fallback). Users set `ENGINE` to one of `django_db_geventpool.backends.{postgresql_psycopg3,postgresql_psycopg2,postgis}` and set `MAX_CONNS`/`REUSE_CONNS` in `OPTIONS`. Supports Django 4.2, 5.2, 6.0 and 6.1 on Python 3.8–3.15 (see `tox.ini` for the exact matrix). The distribution is published as `fdemmer-django-db-geventpool`, but the import name is still `django_db_geventpool` (see Fork and Build and release below).
+A Django database backend for PostgreSQL/PostGIS that pools connections with gevent (eventlet as a fallback). Users set `ENGINE` to one of `django_db_geventpool.backends.{postgresql_psycopg3,postgresql_psycopg2,postgis}` and set `MAX_CONNS`/`REUSE_CONNS` in `OPTIONS`. Supports Django 4.2, 5.2, 6.0 and 6.1 on Python 3.9–3.15 (see `tox.ini` for the exact matrix). The distribution is published as `fdemmer-django-db-geventpool`, but the import name is still `django_db_geventpool` (see Fork and Build and release below).
 
 ## Tests
 
