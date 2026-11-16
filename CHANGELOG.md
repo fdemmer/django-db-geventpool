@@ -4,6 +4,7 @@
 
 - Fixed pooled connections keeping the server's time zone and ignoring `assume_role` on Django >= 5.1: `DatabaseWrapper.pool` (renamed to `gevent_pool`) and `_connection_pools` (renamed to `_gevent_connection_pools`) shadowed Django's native pool, which made Django skip setting up connections and health checks
 - The `pool` option now raises `ImproperlyConfigured`, as the native pool can't be combined with the gevent pool; `'pool': False` is no longer needed
+- Fixed geometry adapters missing on new pooled PostGIS connections with psycopg3 (`cannot adapt type 'PostGISAdapter'`) and the `isolation_level` option being ignored: new connections are created with the backend's `get_new_connection` again, #98
 - Test with Django 4.2, 5.2, 6.0 and 6.1 (dropped 5.0 and 5.1) and Python up to 3.15, updated classifiers
 - CI runs the tox envs (one job per env) with tox-uv instead of separate workflows per driver, with pinned actions and PostGIS image
 - Support running the tests in parallel (`tox -p`) with a test database per env
