@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fixed dead connections still counting towards `MAX_CONNS`: a connection that failed the usability check, was already closed or failed to close stayed in the pool's count until it was garbage collected, and once the limit was reached getting a connection blocked forever
+- Removed the unused `PostgresConnectionPool.create_connection()` and the connection parameters passed to the pool; `DatabaseConnectionPool.get()` now requires `create`
 - Tests for replacing dead connections, rolling back open transactions when a connection is returned to the pool and errors while closing
 
 ## 5.0

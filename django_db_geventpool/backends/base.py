@@ -45,9 +45,7 @@ class DatabaseWrapperMixin:
             if self.alias not in self._gevent_connection_pools:
                 options = self.settings_dict["OPTIONS"]
                 pool_options = {key: options[key] for key in POOL_OPTIONS if key in options}
-                self._gevent_pool = self.pool_class(
-                    **self.get_connection_params(), **pool_options
-                )
+                self._gevent_pool = self.pool_class(**pool_options)
                 self._gevent_connection_pools[self.alias] = self._gevent_pool
             else:
                 self._gevent_pool = self._gevent_connection_pools[self.alias]

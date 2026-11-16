@@ -32,7 +32,8 @@ class DatabaseConnectionPool:
         with self.lock:
             return len(self._conns)
 
-    def get(self, create=None):
+    def get(self, create):
+        """Return a pooled connection, or a new one from ``create()``."""
         try:
             if self.size >= self.maxsize or self.pool.qsize():
                 conn = self.pool.get()
@@ -52,12 +53,8 @@ class DatabaseConnectionPool:
             logger.debug("DB connection queue empty, creating a new one")
 
         if conn is None:
-            try:
-                conn = (create or self.create_connection)()
-            except Exception:
-                raise
-            else:
-                self._conns.add(conn)
+            conn = create()
+            self._conns.add(conn)
 
         return conn
 
