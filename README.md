@@ -1,13 +1,22 @@
 django-db-geventpool
 ====================
 
-[![CI](https://github.com/jneight/django-db-geventpool/actions/workflows/ci.yml/badge.svg)](https://github.com/jneight/django-db-geventpool/actions/workflows/ci.yml)
+[![CI](https://github.com/fdemmer/django-db-geventpool/actions/workflows/main.yml/badge.svg)](https://github.com/fdemmer/django-db-geventpool/actions/workflows/main.yml)
 
-[![pypi version](https://img.shields.io/pypi/v/django-db-geventpool.svg)](https://pypi.python.org/pypi/django-db-geventpool)
+[![pypi version](https://img.shields.io/pypi/v/fdemmer-django-db-geventpool.svg)](https://pypi.org/project/fdemmer-django-db-geventpool/)
 
-[![pypi license](http://img.shields.io/pypi/l/django-db-geventpool.svg)](https://pypi.python.org/pypi/django-db-geventpool)
+[![pypi license](https://img.shields.io/pypi/l/fdemmer-django-db-geventpool.svg)](https://pypi.org/project/fdemmer-django-db-geventpool/)
 
 Another DB pool using gevent for PostgreSQL DB.
+
+This is a fork of [django-db-geventpool](https://github.com/jneight/django-db-geventpool),
+released as `fdemmer-django-db-geventpool`. The import path and backend names are
+the same as upstream's, so uninstall `django-db-geventpool` before installing it:
+
+```
+$ pip uninstall django-db-geventpool
+$ pip install fdemmer-django-db-geventpool
+```
 
 
 psycopg3
