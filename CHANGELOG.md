@@ -5,6 +5,7 @@
 - Fixed the eventlet fallback, which failed to import (`attempted relative import beyond top-level package`) whenever gevent was not installed, broken since 4.0.2
 - Fixed dead connections still counting towards `MAX_CONNS`: a connection that failed the usability check, was already closed or failed to close stayed in the pool's count until it was garbage collected, and once the limit was reached getting a connection blocked forever
 - Removed the unused `PostgresConnectionPool.create_connection()` and the connection parameters passed to the pool; `DatabaseConnectionPool.get()` now requires `create`
+- Test the eventlet fallback with psycopg2 in separate tox envs (`pg2-eventlet`) without gevent installed
 - Tests for replacing dead connections, rolling back open transactions when a connection is returned to the pool and errors while closing
 
 ## 5.0

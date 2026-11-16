@@ -1,7 +1,5 @@
 import datetime
 
-import gevent
-
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections, transaction
 from django.db.backends.postgresql.psycopg_any import IsolationLevel
@@ -9,6 +7,19 @@ from django.test import SimpleTestCase, TestCase
 from django_db_geventpool.utils import close_connection
 
 from .models import TestModel
+
+try:
+    import gevent
+
+    def run_concurrently(func, count):
+        greenlets = [gevent.spawn(func, x) for x in range(count)]
+        gevent.joinall(greenlets, raise_error=True)
+
+except ImportError:
+    import eventlet
+
+    def run_concurrently(func, count):
+        list(eventlet.GreenPool(count).imap(func, range(count)))
 
 
 @close_connection
@@ -34,11 +45,7 @@ class ModelTest(TestCase):
             self.assertEqual(data[key], getattr(obj, key))
 
     def test_connections(self):
-        greenlets = []
-
-        for x in range(0, 50):
-            greenlets.append(gevent.spawn(test_multiple_connections, x))
-        gevent.joinall(greenlets, raise_error=True)
+        run_concurrently(test_multiple_connections, 50)
 
 
 class TimeZoneTest(SimpleTestCase):
