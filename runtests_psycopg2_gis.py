@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import sys
 import gevent.monkey
 
@@ -31,6 +32,8 @@ settings.configure(
             "ATOMIC_REQUESTS": False,
             "CONN_MAX_AGE": 0,
             "HOST": "localhost",
+            # tox sets a name per env, so envs can run in parallel (tox -p)
+            "TEST": {"NAME": os.environ.get("TEST_DB_NAME")},
         }
     },
     INSTALLED_APPS=(
