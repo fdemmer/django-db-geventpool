@@ -1,7 +1,7 @@
 django-db-geventpool
 ====================
 
-[![CI](https://github.com/jneight/django-db-geventpool/actions/workflows/ci.yml/badge.svg)](https://github.com/jneight/django-db-geventpool/actions/workflows/ci.yml)
+[![CI](https://github.com/fdemmer/django-db-geventpool/actions/workflows/main.yml/badge.svg)](https://github.com/fdemmer/django-db-geventpool/actions/workflows/main.yml)
 
 [![pypi version](https://img.shields.io/pypi/v/fdemmer-django-db-geventpool.svg)](https://pypi.org/project/fdemmer-django-db-geventpool/)
 
