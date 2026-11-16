@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Released as `fdemmer-django-db-geventpool`, a fork of [django-db-geventpool](https://github.com/jneight/django-db-geventpool); the import path and backend names are unchanged, uninstall `django-db-geventpool` first
+- Built with setuptools; added a Justfile to test, build and publish; the CI workflow is renamed to `main.yml` and the publish workflow to `publish.yml`, which builds with uv and uses pinned actions
 - Fixed pooled connections keeping the server's time zone and ignoring `assume_role` on Django >= 5.1: `DatabaseWrapper.pool` (renamed to `gevent_pool`) and `_connection_pools` (renamed to `_gevent_connection_pools`) shadowed Django's native pool, which made Django skip setting up connections and health checks
 - The `pool` option now raises `ImproperlyConfigured`, as the native pool can't be combined with the gevent pool; `'pool': False` is no longer needed
 - Fixed geometry adapters missing on new pooled PostGIS connections with psycopg3 (`cannot adapt type 'PostGISAdapter'`) and the `isolation_level` option being ignored: new connections are created with the backend's `get_new_connection` again, [#98](https://github.com/jneight/django-db-geventpool/issues/98)
