@@ -75,7 +75,7 @@ Settings
 ``` {.python}
 DATABASES = {
     'default': {
-        'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg',
+        'ENGINE': 'django_db_geventpool.backends.postgresql_psycopg3',
         'NAME': 'db',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
