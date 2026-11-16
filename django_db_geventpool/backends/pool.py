@@ -45,6 +45,7 @@ class DatabaseConnectionPool:
                 logger.debug("DB connection reused")
             except self.DBERROR:
                 logger.debug("DB connection was closed, creating a new one")
+                self.discard(conn)
                 conn = None
         except queue.Empty:
             conn = None
@@ -66,7 +67,12 @@ class DatabaseConnectionPool:
             logger.debug("DB connection returned to the pool")
         except queue.Full:
             item.close()
-            self._conns.discard(item)
+            self.discard(item)
+
+    def discard(self, conn):
+        """Stop counting a connection that won't be returned to the pool."""
+        with self.lock:
+            self._conns.discard(conn)
 
     def close(self):
         while not self.pool.empty():
@@ -79,7 +85,7 @@ class DatabaseConnectionPool:
             except Exception:
                 continue
             finally:
-                self._conns.discard(conn)
+                self.discard(conn)
 
         logger.debug("DB connections all closed")
 

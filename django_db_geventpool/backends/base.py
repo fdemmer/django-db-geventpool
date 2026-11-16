@@ -75,6 +75,7 @@ class DatabaseWrapperMixin:
         try:
             self._close()
         except:
+            self.gevent_pool.discard(self.connection)
             # In some cases (database restart, network connection lost etc...)
             # the connection to the database is lost without giving Django a
             # notification. If we don't set self.connection to None, the error
@@ -93,6 +94,7 @@ class DatabaseWrapperMixin:
 
     def _close(self):
         if self.connection.closed:
+            self.gevent_pool.discard(self.connection)
             self.gevent_pool.close()
         else:
             if self.connection.info.transaction_status == self.INTRANS:

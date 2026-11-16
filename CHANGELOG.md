@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed dead connections still counting towards `MAX_CONNS`: a connection that failed the usability check, was already closed or failed to close stayed in the pool's count until it was garbage collected, and once the limit was reached getting a connection blocked forever
+- Tests for replacing dead connections, rolling back open transactions when a connection is returned to the pool and errors while closing
+
 ## 5.0
 
 - Released as `fdemmer-django-db-geventpool`, a fork of [django-db-geventpool](https://github.com/jneight/django-db-geventpool); the import path and backend names are unchanged, uninstall `django-db-geventpool` first

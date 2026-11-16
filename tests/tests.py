@@ -98,3 +98,97 @@ class IsolationLevelTest(SimpleTestCase):
             with connections[self.alias].cursor() as cursor:
                 cursor.execute("SHOW transaction_isolation")
                 self.assertEqual(cursor.fetchone()[0], "serializable")
+
+
+class PoolTestCase(SimpleTestCase):
+    """Runs against a private wrapper whose pool holds a single connection."""
+
+    databases = {"default"}
+
+    def setUp(self):
+        self.alias = f"pool_test_{self._testMethodName}"
+        settings_dict = {**connections["default"].settings_dict, "CONN_MAX_AGE": 0}
+        settings_dict["OPTIONS"] = {**settings_dict["OPTIONS"], "MAX_CONNS": 1}
+        self.db = connections["default"].__class__(settings_dict, alias=self.alias)
+        connections[self.alias] = self.db
+        self.addCleanup(connections.__delitem__, self.alias)
+        self.addCleanup(self.db._gevent_connection_pools.pop, self.alias, None)
+        self.addCleanup(self.db.closeall)
+        self.addCleanup(self.db.close)
+
+    def backend_pid(self):
+        self.db.ensure_connection()
+        return self.db.connection.info.backend_pid
+
+    def terminate(self, pid):
+        """Kill a backend from the server side, like a database restart would."""
+        with connections["default"].cursor() as cursor:
+            cursor.execute("SELECT pg_terminate_backend(%s, 5000)", [pid])
+            self.assertIs(cursor.fetchone()[0], True)
+
+
+class DeadConnectionTest(PoolTestCase):
+    def test_dead_connection_is_replaced(self):
+        pid = self.backend_pid()
+        self.db.close()  # back to the pool
+        self.terminate(pid)
+
+        # check_usable fails on the pooled connection, so a new one is created
+        self.assertNotEqual(self.backend_pid(), pid)
+        with self.db.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            self.assertEqual(cursor.fetchone()[0], 1)
+        self.assertEqual(self.db.gevent_pool.size, 1)
+
+
+class CloseInTransactionTest(PoolTestCase):
+    def test_open_transaction_is_rolled_back(self):
+        pid = self.backend_pid()
+        self.db.connection.autocommit = False
+        with self.db.connection.cursor() as cursor:
+            cursor.execute("SET application_name = 'dirty'")
+        self.assertEqual(self.db.connection.info.transaction_status, self.db.INTRANS)
+        self.db.close()
+
+        self.assertEqual(self.backend_pid(), pid)  # the same connection, reused
+        self.assertIs(self.db.connection.autocommit, True)
+        with self.db.cursor() as cursor:
+            cursor.execute("SHOW application_name")
+            self.assertNotEqual(cursor.fetchone()[0], "dirty")
+
+    def test_close_in_atomic_block(self):
+        with transaction.atomic(using=self.alias):
+            TestModel.objects.using(self.alias).create(charfield="rolled back")
+            self.db.close()
+            self.assertIs(self.db.closed_in_transaction, True)
+            self.assertIs(self.db.needs_rollback, True)
+            self.db.close()  # no-op until the atomic block is left
+        self.assertIsNone(self.db.connection)
+
+        self.assertFalse(TestModel.objects.using(self.alias).exists())
+
+
+class CloseErrorTest(PoolTestCase):
+    def test_error_while_closing(self):
+        # the server drops the connection while it is in a transaction, so the
+        # rollback in close() fails
+        pid = self.backend_pid()
+        self.db.connection.autocommit = False
+        with self.db.connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        self.terminate(pid)
+
+        with self.assertLogs("django.geventpool", "WARNING"):
+            with self.assertRaises(self.db.Database.Error):
+                self.db.close()
+        self.assertIsNone(self.db.connection)
+
+        self.assertNotEqual(self.backend_pid(), pid)
+
+    def test_close_closed_connection(self):
+        pid = self.backend_pid()
+        self.db.connection.close()  # closed outside of the pool
+        self.db.close()
+        self.assertIsNone(self.db.connection)
+
+        self.assertNotEqual(self.backend_pid(), pid)
