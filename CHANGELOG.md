@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 5.0
 
 - Released as `fdemmer-django-db-geventpool`, a fork of [django-db-geventpool](https://github.com/jneight/django-db-geventpool); the import path and backend names are unchanged, uninstall `django-db-geventpool` first
 - Built with setuptools; added a Justfile to test, build and publish; the CI workflow is renamed to `main.yml` and the publish workflow to `publish.yml`, which builds with uv and uses pinned actions
