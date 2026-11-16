@@ -10,6 +10,27 @@
 - Fixed the psycopg3 test runners on Python >= 3.12 (`distutils`), and the GIS envs also running the non-GIS tests
 - Updated `docker-compose.yml` to PostGIS 18
 
+## 4.0.8
+
+- Support for Django 5.1, disable Django's native pool with `'pool': False` in `OPTIONS`, #93, #94
+- Pool connections are created with `connect()` of the driver again instead of the backend's `get_new_connection` (reverts 4.0.7)
+- Renamed `DatabaseConnectionPool.closeall()` to `close()`
+- Dropped support for Django < 4.2
+- Tests for Django 5.0, 5.1 and Python 3.13
+
+## 4.0.7
+
+- Create pool connections with the backend's `get_new_connection`, so the PostGIS backend registers its geometry adapters with psycopg3, #89, @kneirinck
+
+## 4.0.6
+
+- Fixed `ImportError` when using the PostGIS backend, #85
+- Tests for the PostGIS backend with psycopg2 and psycopg3
+
+## 4.0.5
+
+- Fixed package: the psycopg3 backend's `__init__.py` was misnamed, #84
+
 ## 4.0.4
 
 - Fix package
