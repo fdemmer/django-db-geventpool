@@ -11,6 +11,7 @@ from .models import TestModel
 
 try:
     import gevent
+    from gevent import sleep
 
     def run_concurrently(func, count):
         greenlets = [gevent.spawn(func, x) for x in range(count)]
@@ -18,6 +19,7 @@ try:
 
 except ImportError:
     import eventlet
+    from eventlet import sleep
 
     def run_concurrently(func, count):
         list(eventlet.GreenPool(count).imap(func, range(count)))
@@ -222,6 +224,13 @@ class FakeConnection:
         self.closed = True
 
 
+class FakePool(DatabaseConnectionPool):
+    DBERROR = RuntimeError
+
+    def check_usable(self, conn):
+        pass
+
+
 class PoolCloseTest(SimpleTestCase):
     def test_close_continues_after_error(self):
         pool = DatabaseConnectionPool(maxsize=2, reuse=2)
@@ -236,3 +245,25 @@ class PoolCloseTest(SimpleTestCase):
         self.assertIs(working.closed, True)
         self.assertEqual(pool.size, 0)
         self.assertTrue(pool.pool.empty())
+
+
+class PoolMaxSizeTest(SimpleTestCase):
+    def test_concurrent_gets_respect_maxsize(self):
+        # #96: connecting yields, so greenlets that arrive while the first
+        # connections are being created must wait instead of creating more
+        pool = FakePool(maxsize=2, reuse=2)
+        created = []
+
+        def create():
+            sleep(0.01)  # connecting yields to other greenlets
+            created.append(FakeConnection())
+            return created[-1]
+
+        def request(_):
+            conn = pool.get(create=create)
+            sleep(0.01)  # run a query
+            pool.put(conn)
+
+        run_concurrently(request, 10)
+        self.assertEqual(len(created), 2)
+        self.assertEqual(pool.size, 2)
