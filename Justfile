@@ -13,8 +13,9 @@ clean:
 db:
     docker compose up -d
 
-test env="":
-    uvx --with tox-uv tox {{ if env == "" { "--parallel auto" } else { "-e " + env } }}
+# all envs in parallel, or one env with optional test labels
+test env="" *labels:
+    uvx --with tox-uv tox {{ if env == "" { "--parallel auto" } else { "-e " + env + " -- " + labels } }}
 
 build: clean
     uv build

@@ -1,9 +1,14 @@
 import datetime
+import importlib.util
+import os
+import unittest
 
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connections, transaction
 from django.db.backends.postgresql.psycopg_any import IsolationLevel
 from django.test import SimpleTestCase, TestCase
+from django_db_geventpool import utils
+from django_db_geventpool.backends import pool
 from django_db_geventpool.backends.pool import DatabaseConnectionPool
 from django_db_geventpool.utils import close_connection
 
@@ -23,6 +28,16 @@ except ImportError:
 
     def run_concurrently(func, count):
         list(eventlet.GreenPool(count).imap(func, range(count)))
+
+
+@unittest.skipUnless(os.environ.get("GREEN") == "eventlet", "eventlet env only")
+class EventletFallbackTest(SimpleTestCase):
+    def test_gevent_not_installed(self):
+        # otherwise the gevent code paths would be used, not the fallback
+        self.assertIsNone(importlib.util.find_spec("gevent"))
+
+    def test_pool_uses_null_lock(self):
+        self.assertIs(pool.RLock, utils.NullContextRLock)
 
 
 @close_connection
