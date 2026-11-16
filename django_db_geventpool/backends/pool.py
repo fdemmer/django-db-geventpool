@@ -12,7 +12,7 @@ try:
     from gevent.lock import RLock
 except ImportError:
     from eventlet import queue
-    from ...utils import NullContextRLock as RLock
+    from ..utils import NullContextRLock as RLock
 
 
 class DatabaseConnectionPool:
