@@ -48,3 +48,10 @@ version = {attr = "django_db_geventpool.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["django_db_geventpool*"]
+
+[tool.coverage.run]
+source = ["django_db_geventpool"]
+parallel = true
+
+[tool.coverage.html]
+show_contexts = true
